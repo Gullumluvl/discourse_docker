@@ -709,6 +709,28 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
+  if [ $smtp_port -eq 465 ]
+  then
+    sed -i -e "s/^  #\?DISCOURSE_SMTP_FORCE_TLS:.*/  DISCOURSE_SMTP_FORCE_TLS: true/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      sed -i -e "s/^  #\?DISCOURSE_SMTP_ENABLE_START_TLS:.*/  DISCOURSE_SMTP_ENABLE_START_TLS: false/w $changelog" $web_file
+    else
+      # Tolerate that the FORCE_TLS line is missing and add it together with the START_TLS line.
+      sed -i -e "s/^  #\?DISCOURSE_SMTP_ENABLE_START_TLS:.*/  DISCOURSE_SMTP_FORCE_TLS: true\n  DISCOURSE_SMTP_ENABLE_START_TLS: false/w $changelog" $web_file
+    fi
+  else
+    sed -i -e "s/^  #\?DISCOURSE_SMTP_FORCE_TLS:.*/  #DISCOURSE_SMTP_FORCE_TLS: false/" $web_file
+    sed -i -e "s/^  #\?DISCOURSE_SMTP_ENABLE_START_TLS:.*/  DISCOURSE_SMTP_ENABLE_START_TLS: true/w $changelog" $web_file
+  fi
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "DISCOURSE_SMTP_ENABLE_START_TLS and DISCOURSE_SMTP_FORCE_TLS change failed."
+    update_ok="n"
+  fi
+
   sed -i -e "s/^  #\?DISCOURSE_SMTP_USER_NAME:.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $web_file
   if [ -s $changelog ]
   then
